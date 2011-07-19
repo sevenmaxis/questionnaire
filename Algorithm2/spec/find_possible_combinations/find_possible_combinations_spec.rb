@@ -39,9 +39,9 @@ describe "find possible combinations" do
     target = 'aabc'
     result = find_possible_combinations(dictionary, target)
     expected = ['a abc', 'a a b c', 'a ab c']
-    calculate_matches(result, expected).should == 3
     puts "==== should find 3 elements in result ===="
     puts result
+    calculate_matches(result, expected).should == 3
   end
 
   it "should find 5 elements" do
@@ -49,9 +49,9 @@ describe "find possible combinations" do
     target = 'aabc'
     result = find_possible_combinations(dictionary, target)
     expected = ['a abc', 'a a b c', 'a ab c']
-    calculate_matches(result, expected).should == 5
     puts "==== should find 5 elements in result ===="
     puts result
+    calculate_matches(result, expected).should == 5
   end
 
   it "should (second) return empty array" do
