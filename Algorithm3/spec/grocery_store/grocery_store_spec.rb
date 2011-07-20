@@ -60,18 +60,6 @@ describe "Checkout" do
       checkout.instance_eval{ @check['CU'][:count]}.should == 1
     end
 
-    it "should have two product items" do
-
-    end
-
-    it "should have one product item and two count" do
-
-    end
-
-    it "every item should have a set of hash features" do
-
-    end
-
     it "should raise an error on unwritten products" do
       @checkout = Checkout.new(@rule1,@rule2,@rule3)
       expect {
@@ -155,15 +143,8 @@ describe "Checkout" do
           checkout.total.should == 8
         end
 
-        it "main product with discount product" do
-
-        end
       end
     end
   end
-end
-
-describe_internally Checkout do
-  
 end
 

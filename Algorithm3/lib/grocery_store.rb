@@ -94,3 +94,4 @@ class Checkout
   def get_hash(product_name)
   end
 end
+
