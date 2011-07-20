@@ -20,71 +20,77 @@ class Checkout
   def initialize(*rules)
     @check = {}
     @rules = {}
-    @rules.each { |r| @rules.merge(r)}
-    @rules.each_pair do |product,rule|
+    rules.each { |r| @rules.merge!(r) }
+    @rules.each_pair do |product, rule|
       if rule.kind_of?(Hash)
-        unless rule.has_key?(:price) or rule.has_key?(:discount) or rule.has_key?(:start_quantity)
+        unless rule.has_key?(:price) and rule.has_key?(:discount) and rule.has_key?(:start_quantity)
           raise ArgumentError, "The rule should have all features: " +
-            "price, discount and start_quantity. Error for product: #{product}"
+              "price, discount and start_quantity. Error for product: #{product}"
         end
       end
     end
   end
 
   def scan(product_name)
-    if check.has_key?(product_name)
-      check[product_name][count] += 1
+    if @check.has_key?(product_name)
+      @check[product_name][:count] += 1
     elsif @rules.has_key?(product_name)
-      check[product_name] = { :count => 1}.merge(@rules[product_name])
+      rule = @rules[product_name]
+      @check[product_name] = rule.is_a?(Hash) ?
+          {:count => 1}.merge!(rule) : {:count => 1, :price => rule}
     else
-      raise ArgumentError, "There's no rule for product #{product}"
+      raise ArgumentError, "There's no rule for product #{product_name}"
     end
   end
 
   def total
     sum = 0
-    check.each_value do |value|
-      if value.is_a?(Hash)
-        if value.count < value.start_quantity
-          sum += value.count * value.price
-        else
-          case value.discount
-            when /^\d{1,2}%$/ # percentage discount
-              discount = value.discount.sub!('$', '').to_f
-              if discount > 99 or discount < 1
-                raise ArgumentError, "The percentage of discount has" +
-                                    "irregular format: #{value.discount}"
-              end
-              sum += value.price * discount * value.count / 100
-            when /^\d{,10}\.\d{,2}$/ # not more then 10 digits in integer part
-              sum += value.discount * value.count
-            when /[a-z_\-]*/i     # here's should be the product name
-              sum -= subtract_discount(value.discount, value.price)
+    @check.each_pair do |key, value|
+      if value[:price] > 99999.99
+        raise ArgumentError, "The price of product #{key} has irregular format." +
+            "It should be not more then 99999.99"
+      end
+      if value.has_key?(:discount) and value[:count] >= value[:start_quantity]
+        case value[:discount]
+          when /^\d{1,2}%$/ # percentage discount
+            discount = value[:discount].sub('%', '').to_f
+            if discount > 99 or discount < 1
+              raise ArgumentError, "The percentage of discount has " +
+                  "irregular format: #{value[:discount]}"
+            end
+            sum += value[:price] * (100 - discount) * value[:count] / 100
+            sum = sum.round(2)
+          when /[a-z_\-]*/i # here's should be the product name
+            sum += value[:price] * value[:count]
+            sum -= subtract_discount(value[:discount], value[:price])
+          else
+            if value[:discount].kind_of?(Numeric)
+              sum += value[:discount] * value[:count]
             else
-              raise ArgumentError, "Discount has irregular format: #{value.discount}"
-          end
+              raise ArgumentError, "Discount has irregular format: #{value[:discount]}"
+            end
         end
       else
-        unless /^\d{,10}\.\d{,2}$/ =~ value
-          raise ArgumentError, "Product price has irregular format: #{value}"
-        end
-        sum += value
+        sum += value[:price] * value[:count]
       end
     end
-    return sum
+    sum
   end
 
   private
   # additional functionality as a bonus
   def subtract_discount(product_name, elder_price)
-    if check.has_key?(product_name)
-      price = check[product_name].price
+    if @check.has_key?(product_name)
+      price = @check[product_name][:price]
       if elder_price > price
         raise ArgumentError, "Discount product can't be more expensive than main " +
-          "product: main product price #{elder_price}, discount product price #{price}"
+            "product: main product price #{elder_price}, discount product price #{price}"
       end
       return price
     end
     return 0
+  end
+
+  def get_hash(product_name)
   end
 end
